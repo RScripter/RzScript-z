@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RScripters</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            max-width: 800px;
+        }
+        .upload-form, .script-list {
+            background-color: #444;
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        input[type="text"], textarea, select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #555;
+            border-radius: 5px;
+            background-color: #222;
+            color: #fff;
+        }
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #555;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #666;
+        }
+        .script-item {
+            background-color: #555;
+            border: 2px solid #666;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            text-align: left;
+        }
+        .script-item:hover {
+            background-color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RzScripts</h1>
+
+        <!-- Upload Form -->
+        <div class="upload-form">
+            <h2>Upload a Script</h2>
+            <input type="text" id="titleInput" placeholder="Script Title" required>
+            <input type="text" id="ownerInput" placeholder="Owner Name" required>
+            <textarea id="scriptInput" placeholder="Paste your script here..." required></textarea>
+            <select id="scriptTypePicker" onchange="toggleGameNameInput()">
+                <option value="none">Select Script Type</option>
+                <option value="universal">Universal Script</option>
+                <option value="game">Game-Specific Script</option>
+            </select>
+            <input type="text" id="gameNameInput" placeholder="Enter Game Name" style="display: none;">
+            <button onclick="uploadScript()">Upload Script</button>
+        </div>
+
+        <!-- Script List -->
+        <div class="script-list">
+            <h2>Uploaded Scripts</h2>
+            <div id="scriptList">
+                <!-- Uploaded scripts will be listed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to toggle the game name input field based on script type
+        function toggleGameNameInput() {
+            const gameNameInput = document.getElementById('gameNameInput');
+            const scriptTypePicker = document.getElementById('scriptTypePicker').value;
+            gameNameInput.style.display = scriptTypePicker === 'game' ? 'block' : 'none';
+        }
+
+        // Function to upload a script
+        function uploadScript() {
+            const titleInput = document.getElementById('titleInput').value;
+            const ownerInput = document.getElementById('ownerInput').value;
+            const scriptInput = document.getElementById('scriptInput').value;
+            const scriptTypePicker = document.getElementById('scriptTypePicker').value;
+            const gameNameInput = document.getElementById('gameNameInput').value;
+
+            let finalTitle = `Made By: ${ownerInput} | ${titleInput}`;
+            if (scriptTypePicker === "universal") {
+                finalTitle += " | Universal";
+            } else if (scriptTypePicker === "game" && gameNameInput) {
+                finalTitle += ` | ${gameNameInput}`;
+            }
+
+            if (titleInput && scriptInput && ownerInput) {
+                fetch('http://localhost:3000/upload', { // Update to your actual API URL
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: finalTitle,
+                        script: scriptInput
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Add the new script to the list
+                    const scriptList = document.getElementById('scriptList');
+                    const scriptItem = document.createElement('div');
+                    scriptItem.className = 'script-item';
+                    scriptItem.textContent = finalTitle;
+                    scriptItem.onclick = function() {
+                        // Redirect or show script details
+                        alert(`Viewing details for: ${finalTitle}`);
+                    };
+                    scriptList.appendChild(scriptItem);
+
+                    // Clear inputs
+                    document.getElementById('titleInput').value = '';
+                    document.getElementById('ownerInput').value = '';
+                    document.getElementById('scriptInput').value = '';
+                    document.getElementById('scriptTypePicker').value = 'none';
+                    document.getElementById('gameNameInput').value = '';
+                    document.getElementById('gameNameInput').style.display = 'none';
+                })
+                .catch(error => alert('Error uploading script.'));
+            } else {
+                alert('Please fill in all fields.');
+            }
+        }
+
+        // Function to load and display scripts
+        function loadScripts() {
+            fetch('http://localhost:3000/scripts') // Update to your actual API URL
+                .then(response => response.json())
+                .then(data => {
+                    const scriptList = document.getElementById('scriptList');
+                    scriptList.innerHTML = '';
+                    data.forEach(script => {
+                        const scriptItem = document.createElement('div');
+                        scriptItem.className = 'script-item';
+                        scriptItem.textContent = script.title;
+                        scriptItem.onclick = function() {
+                            // Redirect or show script details
+                            alert(`Viewing details for: ${script.title}`);
+                        };
+                        scriptList.appendChild(scriptItem);
+                    });
+                })
+                .catch(error => console.error('Error fetching scripts:', error));
+        }
+
+        // Load scripts on page load
+        document.addEventListener('DOMContentLoaded', loadScripts);
+    </script>
+</body>
+</html>
